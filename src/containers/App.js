@@ -1,67 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import CardList from '../components/CardList';
 import SearchBox from '../components/SearchBox';
 import '../index.css'
 
 
-class App extends React.Component {
-    constructor() {
-        super()
-        this.state = {
-            robots: [],
-            searchfield: '',
-            isScrolled: false 
-        }
-    }
+function App() {
+    const [robots, setRobots] = useState([]);
+    const [searchfield, setSearchfield] = useState('');
+    const [isScrolled, setIsScrolled] = useState(false);
+   
+  
+    useEffect(()=> {
+      fetch('https://jsonplaceholder.typicode.com/users')
+        .then(response=> response.json())
+        .then(users => {setRobots(users)});
 
-    componentDidMount() {
-        fetch('https://jsonplaceholder.typicode.com/users')
-            .then(response=> response.json())
-            .then(users => this.setState({ robots: users}));
+        // Scroll listener
+        const handleScroll = () => {
+            if (window.scrollY > 50) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
 
-        window.addEventListener('scroll', this.handleScroll);
-        }
-    
-    componentWillUnmount() {
-        // NEW: Clean up event listener when the component unmounts
-        window.removeEventListener('scroll', this.handleScroll);
-    }
+        window.addEventListener('scroll', handleScroll);
 
-    // NEW: Method to handle scroll
-    handleScroll = () => {
-        if (window.scrollY > 50) { // Adjust the value based on when you want the effect to start
-            this.setState({ isScrolled: true });
-        } else {
-            this.setState({ isScrolled: false });
-        }
-    }
+        // Cleanup function to remove listener on unmount
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []); // Empty dependency array, so this runs only once
+      
+
+    const onSearchChange = (event) => {
+        setSearchfield(event.target.value)
+      };
 
 
-    onSearchChange = (event) => {
-        this.setState({ searchfield: event.target.value })
-    }
+    const filteredRobots = robots.filter(robot =>{
+        return robot.name.toLowerCase().includes(searchfield.toLowerCase());
+    });
 
-    render() {
-        
-        const { robots, searchfield, isScrolled } = this.state;
-        const filteredRobots = robots.filter(robot => {
-            return robot.name.toLowerCase().includes(searchfield.toLowerCase());
-        })
+
         return !robots.length ? 
         <h1 className="righteous-regular">Loading</h1> :
         (
             <div className='tc'>
                 <div className={`sticky-top ${isScrolled ? 'scrolled' : ''}`}>
                 <h1 className="righteous-regular f1">RoboFriends</h1>
-                <SearchBox searchChange={this.onSearchChange}/>
+                <SearchBox searchChange={onSearchChange}/>
                 </div>
                 <div className='card-list-container'>
-                    <CardList robots={filteredRobots}/>
+                        <CardList robots={filteredRobots}/>
                 </div>
             </div>
         );
     }
-}
+
 
 
 export default App;
